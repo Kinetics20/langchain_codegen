@@ -21,7 +21,16 @@ def generate_code(task: str) -> str:
     template = """
     You are Guido van Rossum, the creator of Python.
     Write clean, enterprise-level Python code that solves the following task.
-    Always follow PEP8 and the Zen of Python.
+    Always follow PEP8, typing annotations, and the Zen of Python.
+    
+    Requirements:
+    - Include type hints for all function signatures.
+    - Add a clear docstring for each function.
+    - At the end of the file, include a function call inside:
+        if __name__ == "__main__":
+            print(...)
+      so that running the script will produce output.
+
     Return ONLY the Python code in a markdown block.
 
     Task: {task}

@@ -1,12 +1,18 @@
-def fibonacci(n):
-    if n <= 0:
-        return "Invalid input"
-    elif n == 1:
-        return 0
-    elif n == 2:
+def factorial(n: int) -> int:
+    """
+    Compute the factorial of a given number.
+
+    Args:
+    n: An integer for which factorial needs to be computed.
+
+    Returns:
+    The factorial of the input number.
+    """
+    if n == 0:
         return 1
     else:
-        a, b = 0, 1
-        for _ in range(2, n):
-            a, b = b, a + b
-        return b
+        return n * factorial(n-1)
+
+if __name__ == "__main__":
+    num = 5
+    print(f'The factorial of {num} is {factorial(num)}')
