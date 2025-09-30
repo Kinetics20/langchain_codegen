@@ -5,10 +5,10 @@ def merge_sort(arr: List[int]) -> List[int]:
     Sorts a list of integers using merge sort algorithm.
 
     Args:
-    arr: A list of integers to be sorted.
+    arr (List[int]): The list of integers to be sorted.
 
     Returns:
-    A new sorted list of integers.
+    List[int]: The sorted list of integers.
     """
     if len(arr) <= 1:
         return arr
@@ -27,11 +27,11 @@ def merge(left: List[int], right: List[int]) -> List[int]:
     Merges two sorted lists into a single sorted list.
 
     Args:
-    left: A sorted list of integers.
-    right: A sorted list of integers.
+    left (List[int]): The left sorted list.
+    right (List[int]): The right sorted list.
 
     Returns:
-    A new sorted list containing all elements from both input lists.
+    List[int]: The merged sorted list.
     """
     result = []
     i = j = 0
