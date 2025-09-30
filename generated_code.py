@@ -1,18 +1,50 @@
-def factorial(n: int) -> int:
+from typing import List
+
+def merge_sort(arr: List[int]) -> List[int]:
     """
-    Compute the factorial of a given number.
+    Sorts a list of integers using merge sort algorithm.
 
     Args:
-    n: An integer for which factorial needs to be computed.
+    arr: A list of integers to be sorted.
 
     Returns:
-    The factorial of the input number.
+    A new sorted list of integers.
     """
-    if n == 0:
-        return 1
-    else:
-        return n * factorial(n-1)
+    if len(arr) <= 1:
+        return arr
 
-if __name__ == "__main__":
-    num = 5
-    print(f'The factorial of {num} is {factorial(num)}')
+    mid = len(arr) // 2
+    left_half = arr[:mid]
+    right_half = arr[mid:]
+
+    left_half = merge_sort(left_half)
+    right_half = merge_sort(right_half)
+
+    return merge(left_half, right_half)
+
+def merge(left: List[int], right: List[int]) -> List[int]:
+    """
+    Merges two sorted lists into a single sorted list.
+
+    Args:
+    left: A sorted list of integers.
+    right: A sorted list of integers.
+
+    Returns:
+    A new sorted list containing all elements from both input lists.
+    """
+    result = []
+    i = j = 0
+
+    while i < len(left) and j < len(right):
+        if left[i] < right[j]:
+            result.append(left[i])
+            i += 1
+        else:
+            result.append(right[j])
+            j += 1
+
+    result.extend(left[i:])
+    result.extend(right[j])
+
+    return result
