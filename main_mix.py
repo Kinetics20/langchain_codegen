@@ -127,7 +127,7 @@ if __name__ == "__main__":
     task = input("Enter task description: ")
 
     # Modele (dual-mode setup)
-    llm_code = ChatOpenAI(model="gpt-4o-mini", temperature=0)   # generowanie kodu
+    llm_code = ChatOpenAI(model="gpt-5-mini", temperature=0)   # generowanie kodu
     llm_tests = ChatOpenAI(model="gpt-5-mini", temperature=0)   # generowanie testów
     llm_repair = ChatOpenAI(model="gpt-5-mini", temperature=0)  # poprawki kodu
 
