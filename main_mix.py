@@ -140,16 +140,16 @@ if __name__ == "__main__":
         print("\n⚠️ Invalid Python code, exiting.")
         exit(1)
 
-    with open("generated_code.py", "w", encoding="utf-8") as f:
+    with open("generated_code_mix.py", "w", encoding="utf-8") as f:
         f.write(code)
-    print("\n✅ Code saved to generated_code.py")
+    print("\n✅ Code saved to generated_code_mix.py")
 
     # Step 2: generate tests
     test_code = generate_tests(code, llm_tests)
     os.makedirs("tests", exist_ok=True)
-    with open("tests/test_generated_code.py", "w", encoding="utf-8") as f:
+    with open("tests/test_generated_code_mix.py", "w", encoding="utf-8") as f:
         f.write(test_code)
-    print("✅ Test suite saved to tests/test_generated_code.py")
+    print("✅ Test suite saved to tests/test_generated_code_mix.py")
 
     # Step 3: run pytest
     success, output = run_pytest()
@@ -165,9 +165,9 @@ if __name__ == "__main__":
         print(fixed_code)
 
         if validate_code(fixed_code):
-            with open("generated_code.py", "w", encoding="utf-8") as f:
+            with open("generated_code_mix.py", "w", encoding="utf-8") as f:
                 f.write(fixed_code)
-            print("\n✅ Fixed code saved to generated_code.py")
+            print("\n✅ Fixed code saved to generated_code_mix.py")
 
             # Run pytest again
             success, output = run_pytest()

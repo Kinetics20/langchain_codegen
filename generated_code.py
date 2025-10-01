@@ -1,86 +1,82 @@
 from typing import List, Tuple
 
+Matrix = List[List[int]]
 
-def _validate_matrix(matrix: List[List[int]], name: str) -> Tuple[int, int]:
+
+def _validate_matrix(matrix: Matrix, name: str) -> Tuple[int, int]:
     """
-    Validate that a matrix is a non-empty, rectangular list of lists of ints.
+    Validate that a matrix is well-formed and return its dimensions.
 
-    Parameters
-    ----------
-    matrix:
-        The matrix to validate.
-    name:
-        The name used in error messages to identify the matrix.
+    A well-formed matrix is a non-empty list of non-empty rows where each
+    row has the same number of integer elements.
 
-    Returns
-    -------
-    (rows, cols)
-        The number of rows and columns of the matrix.
+    Args:
+        matrix: The matrix to validate.
+        name: Human-readable name used in error messages.
 
-    Raises
-    ------
-    ValueError
-        If the matrix is empty, not rectangular, or contains non-int values.
+    Returns:
+        A tuple (rows, cols) with the matrix dimensions.
+
+    Raises:
+        ValueError: If the matrix is malformed.
     """
     if not isinstance(matrix, list) or not matrix:
-        raise ValueError(f"{name} must be a non-empty list of lists")
-    first_row = matrix[0]
-    if not isinstance(first_row, list) or not first_row:
-        raise ValueError(f"{name} must contain at least one column")
-    cols = len(first_row)
-    rows = len(matrix)
-    for i, row in enumerate(matrix):
-        if not isinstance(row, list):
-            raise ValueError(f"{name} row {i} is not a list")
-        if len(row) != cols:
-            raise ValueError(f"{name} rows have inconsistent lengths")
-        for j, value in enumerate(row):
-            if not isinstance(value, int):
-                raise ValueError(
-                    f"{name}[{i}][{j}] must be an int, got {type(value)}"
-                )
-    return rows, cols
+        raise ValueError(f"{name} must be a non-empty list of rows.")
+    if any(not isinstance(row, list) or not row for row in matrix):
+        raise ValueError(f"{name} must contain non-empty rows as lists.")
+    row_length = len(matrix[0])
+    for row in matrix:
+        if len(row) != row_length:
+            raise ValueError(f"All rows in {name} must have the same length.")
+        for item in row:
+            if not isinstance(item, int):
+                raise ValueError(f"All elements of {name} must be integers.")
+    return len(matrix), row_length
 
 
-def multiply_matrices(
-    a: List[List[int]], b: List[List[int]]
-) -> List[List[int]]:
+def multiply_matrices(matrix_a: Matrix, matrix_b: Matrix) -> Matrix:
     """
-    Multiply two matrices represented as lists of lists of ints.
+    Multiply two matrices of integers and return the product.
 
-    Parameters
-    ----------
-    a:
-        Left-hand matrix with shape (m, n).
-    b:
-        Right-hand matrix with shape (n, p).
+    The function validates that both matrices are well-formed and that the
+    number of columns in the first matrix equals the number of rows in
+    the second matrix.
 
-    Returns
-    -------
-    product:
-        The resulting matrix with shape (m, p).
+    Args:
+        matrix_a: Left-hand matrix as a list of integer rows.
+        matrix_b: Right-hand matrix as a list of integer rows.
 
-    Raises
-    ------
-    ValueError
-        If either matrix is invalid or their dimensions are incompatible.
+    Returns:
+        The product matrix as a list of integer rows.
+
+    Raises:
+        ValueError: If matrices are malformed or have incompatible sizes.
     """
-    a_rows, a_cols = _validate_matrix(a, "A")
-    b_rows, b_cols = _validate_matrix(b, "B")
+    a_rows, a_cols = _validate_matrix(matrix_a, "matrix_a")
+    b_rows, b_cols = _validate_matrix(matrix_b, "matrix_b")
     if a_cols != b_rows:
-        raise ValueError("A columns must equal B rows for multiplication")
-    # Transpose B for cache-friendly column access.
-    b_t: List[List[int]] = [
-        [b[r][c] for r in range(b_rows)] for c in range(b_cols)
+        raise ValueError(
+            "Incompatible dimensions: matrix_a columns must equal "
+            "matrix_b rows."
+        )
+
+    # Transpose matrix_b for cache-friendly access to its columns.
+    transposed_b: List[List[int]] = [
+        [matrix_b[r][c] for r in range(b_rows)] for c in range(b_cols)
     ]
-    result: List[List[int]] = [[0] * b_cols for _ in range(a_rows)]
+
+    result: Matrix = [
+        [0 for _ in range(b_cols)] for _ in range(a_rows)
+    ]
+
     for i in range(a_rows):
-        a_row = a[i]
-        res_row = result[i]
+        row_a = matrix_a[i]
         for j in range(b_cols):
-            b_col = b_t[j]
-            s = 0
+            col_b = transposed_b[j]
+            # Compute dot product of row_a and col_b.
+            total = 0
             for k in range(a_cols):
-                s += a_row[k] * b_col[k]
-            res_row[j] = s
+                total += row_a[k] * col_b[k]
+            result[i][j] = total
+
     return result

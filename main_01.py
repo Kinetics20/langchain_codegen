@@ -126,7 +126,7 @@ def repair_code(code: str, tests: str, errors: str, llm: ChatOpenAI) -> str:
 if __name__ == "__main__":
     task = input("Enter task description: ")
 
-    llm = ChatOpenAI(model="gpt-5-nano", temperature=0)
+    llm = ChatOpenAI(model="gpt-5-mini", temperature=0)
 
     # Step 1: generate code
     code = generate_code(task, llm)
@@ -137,16 +137,16 @@ if __name__ == "__main__":
         print("\n⚠️ Invalid Python code, exiting.")
         exit(1)
 
-    with open("generated_code.py", "w", encoding="utf-8") as f:
+    with open("generated_code_01.py", "w", encoding="utf-8") as f:
         f.write(code)
-    print("\n✅ Code saved to generated_code.py")
+    print("\n✅ Code saved to generated_code_01.py")
 
     # Step 2: generate tests
     test_code = generate_tests(code, llm)
     os.makedirs("tests", exist_ok=True)
-    with open("tests/test_generated_code.py", "w", encoding="utf-8") as f:
+    with open("tests/test_generated_code_01.py", "w", encoding="utf-8") as f:
         f.write(test_code)
-    print("✅ Test suite saved to tests/test_generated_code.py")
+    print("✅ Test suite saved to tests/test_generated_code_01.py")
 
     # Step 3: run pytest
     success, output = run_pytest()
@@ -162,9 +162,9 @@ if __name__ == "__main__":
         print(fixed_code)
 
         if validate_code(fixed_code):
-            with open("generated_code.py", "w", encoding="utf-8") as f:
+            with open("generated_code_01.py", "w", encoding="utf-8") as f:
                 f.write(fixed_code)
-            print("\n✅ Fixed code saved to generated_code.py")
+            print("\n✅ Fixed code saved to generated_code_01.py")
 
             # Run pytest again
             success, output = run_pytest()
