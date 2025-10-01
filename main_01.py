@@ -126,7 +126,7 @@ def repair_code(code: str, tests: str, errors: str, llm: ChatOpenAI) -> str:
 if __name__ == "__main__":
     task = input("Enter task description: ")
 
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    llm = ChatOpenAI(model="gpt-5-nano", temperature=0)
 
     # Step 1: generate code
     code = generate_code(task, llm)

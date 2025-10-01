@@ -1,45 +1,68 @@
-from typing import List
+from typing import List, Tuple
 
-def merge_sort(arr: List[int]) -> List[int]:
-    """Sorts a list of integers using the merge sort algorithm.
+Matrix = List[List[int]]
 
-    Args:
-        arr (List[int]): The list of integers to be sorted.
 
-    Returns:
-        List[int]: A new list containing the sorted integers.
+def _validate_matrix(matrix: Matrix, name: str) -> Tuple[int, int]:
     """
-    if len(arr) <= 1:
-        return arr
+    Validate that `matrix` is a non-empty, rectangular matrix of ints.
 
-    mid = len(arr) // 2
-    left_half = merge_sort(arr[:mid])
-    right_half = merge_sort(arr[mid:])
+    Returns a tuple (rows, cols) describing the matrix dimensions.
 
-    return merge(left_half, right_half)
-
-def merge(left: List[int], right: List[int]) -> List[int]:
-    """Merges two sorted lists into a single sorted list.
-
-    Args:
-        left (List[int]): The first sorted list.
-        right (List[int]): The second sorted list.
-
-    Returns:
-        List[int]: A new list containing the merged sorted integers.
+    Raises:
+        ValueError: If the matrix is empty, non-rectangular, has empty rows,
+                    or contains non-integer elements.
     """
-    merged = []
-    left_index, right_index = 0, 0
+    if not matrix:
+        raise ValueError(f"matrix '{name}' must not be empty")
+    row_count = len(matrix)
+    first_row_len = len(matrix[0])
+    if first_row_len == 0:
+        raise ValueError(f"matrix '{name}' must have non-empty rows")
+    for r_index, row in enumerate(matrix):
+        if len(row) != first_row_len:
+            raise ValueError(
+                f"matrix '{name}' must be rectangular; row {r_index} has "
+                "different length"
+            )
+        for c_index, item in enumerate(row):
+            if not isinstance(item, int):
+                raise ValueError(
+                    "matrix elements must be integers; found non-int at "
+                    f"{name}[{r_index}][{c_index}]"
+                )
+    return row_count, first_row_len
 
-    while left_index < len(left) and right_index < len(right):
-        if left[left_index] < right[right_index]:
-            merged.append(left[left_index])
-            left_index += 1
-        else:
-            merged.append(right[right_index])
-            right_index += 1
 
-    merged.extend(left[left_index:])
-    merged.extend(right[right_index:])
+def multiply_matrices(a: Matrix, b: Matrix) -> Matrix:
+    """
+    Multiply two matrices `a` and `b` and return the product.
 
-    return merged
+    Both matrices must be lists of lists of integers. The number of columns
+    in `a` must equal the number of rows in `b`. The result is a new
+    matrix of size (rows of a) x (cols of b).
+
+    Raises:
+        ValueError: If either matrix is invalid or the shapes are incompatible.
+    """
+    a_rows, a_cols = _validate_matrix(a, "a")
+    b_rows, b_cols = _validate_matrix(b, "b")
+    if a_cols != b_rows:
+        raise ValueError(
+            "incompatible dimensions: a has %d cols but b has %d rows"
+            % (a_cols, b_rows)
+        )
+    # Transpose b for better locality when computing dot products.
+    b_t: Matrix = [list(col) for col in zip(*b)]
+    result: Matrix = []
+    for i in range(a_rows):
+        row = a[i]
+        result_row: List[int] = []
+        for col in b_t:
+            # Compute dot product of row and column.
+            acc = 0
+            for x, y in zip(row, col):
+                acc += x * y
+            result_row.append(acc)
+        result.append(result_row)
+    return result
