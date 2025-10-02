@@ -1,135 +1,87 @@
 import pytest
 from generated_code import _validate_matrix, multiply_matrices
 
-def test_validate_matrix_valid_single():
-    dims = _validate_matrix([[5]], "single")
-    assert dims == (1, 1)
+def test_validate_matrix_single_element():
+    assert _validate_matrix([[42]], "M") == (1, 1)
 
-def test_validate_matrix_valid_rectangular():
-    matrix = [
-        [1, 2, 3],
-        [4, 5, 6]
-    ]
-    dims = _validate_matrix(matrix, "rect")
-    assert dims == (2, 3)
+def test_validate_matrix_rectangular_matrix():
+    m = [[1, 2, 3], [4, 5, 6]]
+    assert _validate_matrix(m, "X") == (2, 3)
 
-def test_validate_matrix_non_list_raises_value_error():
-    try:
-        _validate_matrix("not a matrix", "bad")
-        assert False, "Expected ValueError for non-list matrix"
-    except Exception as e:
-        assert isinstance(e, ValueError)
-        assert "must be a non-empty list of rows" in str(e)
+def test_validate_matrix_not_list_raises_type_error():
+    with pytest.raises(TypeError) as exc:
+        _validate_matrix((1, 2, 3), "M")
+    assert "M must be a list of lists of ints" in str(exc.value)
 
-def test_validate_matrix_empty_list_raises_value_error():
-    try:
-        _validate_matrix([], "empty")
-        assert False, "Expected ValueError for empty matrix"
-    except Exception as e:
-        assert isinstance(e, ValueError)
-        assert "must be a non-empty list of rows" in str(e)
+def test_validate_matrix_row_not_list_raises_type_error():
+    with pytest.raises(TypeError) as exc:
+        _validate_matrix([1, 2, 3], "A")
+    assert "A[0] must be a list of ints" in str(exc.value)
 
-def test_validate_matrix_row_not_list_or_empty_raises_value_error():
-    # One row is an empty list
-    try:
-        _validate_matrix([[1, 2], []], "rows")
-        assert False, "Expected ValueError for empty row"
-    except Exception as e:
-        assert isinstance(e, ValueError)
-        assert "must contain non-empty rows as lists" in str(e)
+def test_validate_matrix_element_not_int_raises_type_error():
+    with pytest.raises(TypeError) as exc:
+        _validate_matrix([[1, 2.5], [3, 4]], "B")
+    assert "B[0][1] must be an int" in str(exc.value)
 
-    # One row is not a list
-    try:
-        _validate_matrix([[1, 2], "not a row"], "rows")
-        assert False, "Expected ValueError for non-list row"
-    except Exception as e:
-        assert isinstance(e, ValueError)
-        assert "must contain non-empty rows as lists" in str(e)
+def test_validate_matrix_empty_matrix_raises_value_error():
+    with pytest.raises(ValueError) as exc:
+        _validate_matrix([], "Empty")
+    assert "Empty must not be empty" in str(exc.value)
 
-def test_validate_matrix_inconsistent_row_length_raises_value_error():
-    try:
-        _validate_matrix([[1, 2], [3, 4, 5]], "inconsistent")
-        assert False, "Expected ValueError for inconsistent row lengths"
-    except Exception as e:
-        assert isinstance(e, ValueError)
-        assert "All rows in inconsistent must have the same length" in str(e)
+def test_validate_matrix_empty_row_raises_value_error():
+    with pytest.raises(ValueError) as exc:
+        _validate_matrix([[]], "R")
+    assert "R rows must not be empty" in str(exc.value)
 
-def test_validate_matrix_non_integer_elements_raises_value_error():
-    try:
-        _validate_matrix([[1, 2], [3, "a"]], "contains_non_int")
-        assert False, "Expected ValueError for non-integer element"
-    except Exception as e:
-        assert isinstance(e, ValueError)
-        assert "All elements of contains_non_int must be integers" in str(e)
+def test_validate_matrix_inconsistent_row_lengths_raises_value_error():
+    with pytest.raises(ValueError) as exc:
+        _validate_matrix([[1, 2], [3]], "I")
+    assert "I must be rectangular; row 1 has inconsistent length" in str(exc.value)
 
-def test_multiply_single_elements():
-    result = multiply_matrices([[2]], [[3]])
-    assert result == [[6]]
+def test_multiply_matrices_1x1():
+    a = [[2]]
+    b = [[3]]
+    assert multiply_matrices(a, b) == [[6]]
 
-def test_multiply_2x3_by_3x2():
-    a = [
-        [1, 2, 3],
-        [4, 5, 6]
-    ]
-    b = [
-        [7, 8],
-        [9, 10],
-        [11, 12]
-    ]
-    expected = [
-        [58, 64],
-        [139, 154]
-    ]
+def test_multiply_matrices_2x3_by_3x2():
+    a = [[1, 2, 3], [4, 5, 6]]
+    b = [[7, 8], [9, 10], [11, 12]]
+    expected = [[58, 64], [139, 154]]
     assert multiply_matrices(a, b) == expected
 
-def test_multiply_1x3_by_3x1():
-    a = [[1, 0, -1]]
-    b = [[2], [3], [4]]
-    # 1*2 + 0*3 + (-1)*4 = -2
-    assert multiply_matrices(a, b) == [[-2]]
+def test_multiply_matrices_row_by_column_returns_single_value_matrix():
+    a = [[1, 2, 3]]
+    b = [[4], [5], [6]]
+    assert multiply_matrices(a, b) == [[32]]
 
-def test_multiply_incompatible_dimensions_raises_value_error():
-    a = [
-        [1, 2],
-        [3, 4]
-    ]  # 2x2
-    b = [
-        [1, 2, 3]
-    ]  # 1x3
-    try:
+def test_multiply_matrices_with_negatives_and_zeros():
+    a = [[0, -1], [2, 3]]
+    b = [[4, 0], [-5, 1]]
+    # manual calculation:
+    # row0*col0 = 0*4 + -1*-5 = 5
+    # row0*col1 = 0*0 + -1*1 = -1
+    # row1*col0 = 2*4 + 3*-5 = 8 -15 = -7
+    # row1*col1 = 2*0 + 3*1 = 3
+    assert multiply_matrices(a, b) == [[5, -1], [-7, 3]]
+
+def test_multiply_matrices_dimension_mismatch_raises_value_error():
+    a = [[1, 2], [3, 4]]
+    b = [[5], [6], [7]]
+    with pytest.raises(ValueError) as exc:
         multiply_matrices(a, b)
-        assert False, "Expected ValueError for incompatible dimensions"
-    except Exception as e:
-        assert isinstance(e, ValueError)
-        assert "Incompatible dimensions" in str(e)
+    assert "A's column count must equal B's row count" in str(exc.value)
 
-def test_multiply_with_malformed_matrices_raises_value_error():
-    # matrix_a malformed
-    try:
-        multiply_matrices([], [[1]])
-        assert False, "Expected ValueError for malformed matrix_a"
-    except Exception as e:
-        assert isinstance(e, ValueError)
-        assert "must be a non-empty list of rows" in str(e)
+def test_multiply_matrices_propagates_validate_errors():
+    # B contains a non-int element -> should raise TypeError from _validate_matrix
+    a = [[1, 2]]
+    b = [[3, "x"]]
+    with pytest.raises(TypeError) as exc:
+        multiply_matrices(a, b)
+    assert "B[0][1] must be an int" in str(exc.value)
 
-    # matrix_b malformed
-    try:
-        multiply_matrices([[1]], [["bad"]])
-        assert False, "Expected ValueError for malformed matrix_b"
-    except Exception as e:
-        assert isinstance(e, ValueError)
-        assert "must be a non-empty list of rows" in str(e) or "must contain non-empty rows as lists" in str(e) or "must be integers" in str(e)
-
-def test_multiply_with_identity_returns_same_matrix():
-    matrix = [
-        [3, 5, 2],
-        [1, 0, -1],
-        [4, 2, 6]
-    ]
-    identity = [
-        [1, 0, 0],
-        [0, 1, 0],
-        [0, 0, 1]
-    ]
-    assert multiply_matrices(matrix, identity) == matrix
-    assert multiply_matrices(identity, matrix) == matrix
+def test_multiply_matrices_empty_matrix_raises_value_error():
+    a = [[1, 2]]
+    b = []
+    with pytest.raises(ValueError) as exc:
+        multiply_matrices(a, b)
+    assert "B must not be empty" in str(exc.value)
