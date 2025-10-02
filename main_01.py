@@ -9,8 +9,11 @@ from langchain_core.output_parsers import StrOutputParser
 
 from style_knowledge_base import add_documents, retrieve_style
 
-# Load environment variables from .env
+# Load environment variables
 load_dotenv()
+
+CODE_FILENAME = "generated_code_01.py"
+TEST_FILENAME = "tests/test_generated_code_01.py"
 
 
 def clean_code(text: str) -> str:
@@ -32,9 +35,9 @@ def validate_code(code: str) -> bool:
 
 
 def run_pytest() -> tuple[bool, str]:
-    """Run pytest and return (success, output)."""
+    """Run pytest only on the generated test file and return (success, output)."""
     result = subprocess.run(
-        ["pytest", "-q", "--tb=short"],
+        ["pytest", "-q", "--tb=short", TEST_FILENAME],
         capture_output=True,
         text=True
     )
@@ -74,7 +77,7 @@ def generate_code(task: str, llm: ChatOpenAI) -> str:
 
 
 def generate_tests(code: str, llm: ChatOpenAI) -> str:
-    """Generate pytest suite for the given code (without imports)."""
+    """Generate pytest suite for the given code."""
     test_prompt = PromptTemplate.from_template("""
     You are an expert Python developer.
     Write a pytest test suite for the following code.
@@ -92,8 +95,8 @@ def generate_tests(code: str, llm: ChatOpenAI) -> str:
     raw_tests = test_chain.invoke({"code": code})
     tests_body = clean_code(raw_tests)
 
-    # Doklejamy poprawny nagłówek sami
-    header = "import pytest\nfrom generated_code import *\n\n"
+    # Add explicit header to import from the generated code file
+    header = f"import pytest\nfrom {CODE_FILENAME.replace('.py', '')} import *\n\n"
     return header + tests_body
 
 
@@ -137,16 +140,16 @@ if __name__ == "__main__":
         print("\n⚠️ Invalid Python code, exiting.")
         exit(1)
 
-    with open("generated_code_01.py", "w", encoding="utf-8") as f:
+    with open(CODE_FILENAME, "w", encoding="utf-8") as f:
         f.write(code)
-    print("\n✅ Code saved to generated_code_01.py")
+    print(f"\n✅ Code saved to {CODE_FILENAME}")
 
     # Step 2: generate tests
     test_code = generate_tests(code, llm)
     os.makedirs("tests", exist_ok=True)
-    with open("tests/test_generated_code_01.py", "w", encoding="utf-8") as f:
+    with open(TEST_FILENAME, "w", encoding="utf-8") as f:
         f.write(test_code)
-    print("✅ Test suite saved to tests/test_generated_code_01.py")
+    print(f"✅ Test suite saved to {TEST_FILENAME}")
 
     # Step 3: run pytest
     success, output = run_pytest()
@@ -162,9 +165,9 @@ if __name__ == "__main__":
         print(fixed_code)
 
         if validate_code(fixed_code):
-            with open("generated_code_01.py", "w", encoding="utf-8") as f:
+            with open(CODE_FILENAME, "w", encoding="utf-8") as f:
                 f.write(fixed_code)
-            print("\n✅ Fixed code saved to generated_code_01.py")
+            print(f"\n✅ Fixed code saved to {CODE_FILENAME}")
 
             # Run pytest again
             success, output = run_pytest()
