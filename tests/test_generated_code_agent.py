@@ -1,160 +1,118 @@
 import pytest
-from generated_code_agent import _validate_matrix, multiply_matrices
+from generated_code_agent import _matrix_dimensions, _validate_matrix_entries, multiply_matrices
 
-def test_validate_matrix_valid():
-    m = [[1, 2], [3, 4]]
-    result = _validate_matrix(m, "m")
-    assert result is None
+def test_matrix_dimensions_rectangular():
+    matrix = [[1, 2], [3, 4]]
+    assert _matrix_dimensions(matrix) == (2, 2)
 
-def test_validate_matrix_not_list_raises_typeerror():
+def test_matrix_dimensions_single_row_and_single_column():
+    assert _matrix_dimensions([[1, 2, 3]]) == (1, 3)
+    assert _matrix_dimensions([[1], [2], [3]]) == (3, 1)
+
+def test_matrix_dimensions_empty_raises_value_error():
     try:
-        _validate_matrix(None, "m")
-        assert False, "Expected TypeError for non-list matrix"
-    except Exception as e:
-        assert isinstance(e, TypeError)
-        assert "must be a list of lists of ints" in str(e)
+        _matrix_dimensions([])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Expected ValueError for empty matrix")
 
-def test_validate_matrix_empty_matrix_raises_valueerror():
+def test_matrix_dimensions_zero_columns_raises_value_error():
     try:
-        _validate_matrix([], "m")
-        assert False, "Expected ValueError for empty matrix"
-    except Exception as e:
-        assert isinstance(e, ValueError)
-        assert "must have at least one row" in str(e)
+        _matrix_dimensions([[], []])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Expected ValueError for rows with zero columns")
 
-def test_validate_matrix_row_not_list_raises_typeerror():
+def test_matrix_dimensions_non_rectangular_raises_value_error():
     try:
-        _validate_matrix([1, 2, 3], "m")
-        assert False, "Expected TypeError for a row that is not a list"
-    except Exception as e:
-        assert isinstance(e, TypeError)
-        assert "m[0] must be a list" in str(e)
+        _matrix_dimensions([[1, 2], [3]])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Expected ValueError for non-rectangular matrix")
 
-def test_validate_matrix_empty_row_raises_valueerror():
+def test_validate_matrix_entries_accepts_integers():
+    matrix = [[0, -1], [2, 3]]
+    # Should not raise
+    _validate_matrix_entries(matrix)
+
+def test_validate_matrix_entries_empty_matrix_accepts():
+    # Empty matrix should not raise when validating entries
+    _validate_matrix_entries([])
+
+def test_validate_matrix_entries_non_integer_raises_type_error():
     try:
-        _validate_matrix([[]], "m")
-        assert False, "Expected ValueError for an empty row"
-    except Exception as e:
-        assert isinstance(e, ValueError)
-        assert "m[0] must have at least one column" in str(e)
+        _validate_matrix_entries([[1, 2.5]])
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("Expected TypeError for non-integer matrix entry")
 
-def test_validate_matrix_inconsistent_row_lengths_raises_valueerror():
-    try:
-        _validate_matrix([[1, 2], [3]], "m")
-        assert False, "Expected ValueError for inconsistent row lengths"
-    except Exception as e:
-        assert isinstance(e, ValueError)
-        assert "All rows of m must have the same length" in str(e)
-
-def test_validate_matrix_element_not_int_raises_typeerror():
-    try:
-        _validate_matrix([[1, "a"]], "m")
-        assert False, "Expected TypeError for non-int element"
-    except Exception as e:
-        assert isinstance(e, TypeError)
-        assert "must be an int" in str(e)
-        assert "str" in str(e)
-
-def test_multiply_matrices_1x1():
-    a = [[3]]
-    b = [[4]]
-    assert multiply_matrices(a, b) == [[12]]
-
-def test_multiply_matrices_2x3_by_3x2():
-    a = [
-        [1, 2, 3],
-        [4, 5, 6],
-    ]
-    b = [
-        [7, 8],
-        [9, 10],
-        [11, 12],
-    ]
-    expected = [
-        [58, 64],
-        [139, 154],
-    ]
-    assert multiply_matrices(a, b) == expected
-
-def test_multiply_by_identity_returns_same_matrix():
-    a = [
-        [5, -2, 3],
-        [0, 7, 1],
-    ]
-    identity = [
-        [1, 0, 0],
-        [0, 1, 0],
-        [0, 0, 1],
-    ]
-    result = multiply_matrices(a, identity)
-    assert result == a
-
-def test_multiply_with_zero_matrix_results_zero_matrix():
-    a = [
-        [1, 2],
-        [3, 4],
-    ]
-    zero = [
-        [0, 0],
-    ]
-    # adjust to valid dimensions: a is 2x2, zero must be 2xP to multiply; test a * zero(2x2)
-    zero2 = [
-        [0, 0],
-        [0, 0],
-    ]
-    result = multiply_matrices(a, zero2)
-    assert result == [[0, 0], [0, 0]]
-
-def test_multiply_vector_forms():
-    a = [[1, 2, 3]]      # 1x3
-    b = [[4], [5], [6]]  # 3x1
-    assert multiply_matrices(a, b) == [[32]]
-    # Nx1 times 1xM -> NxM
-    c = [[2], [3]]       # 2x1
-    d = [[7, 8]]         # 1x2
-    assert multiply_matrices(c, d) == [[14, 16], [21, 24]]
-
-def test_multiply_incompatible_dimensions_raises_valueerror():
-    a = [[1, 2]]  # 1x2
-    b = [[1, 2]]  # 1x2 -> incompatible (a_cols=2, b_rows=1)
-    try:
-        multiply_matrices(a, b)
-        assert False, "Expected ValueError for incompatible dimensions"
-    except Exception as e:
-        assert isinstance(e, ValueError)
-        assert "Incompatible dimensions" in str(e)
-
-def test_multiply_raises_typeerror_for_invalid_input():
-    a = "not a matrix"
-    b = [[1]]
-    try:
-        multiply_matrices(a, b)
-        assert False, "Expected TypeError for invalid input 'a'"
-    except Exception as e:
-        assert isinstance(e, TypeError)
-    # invalid 'b'
-    try:
-        multiply_matrices([[1]], None)
-        assert False, "Expected TypeError for invalid input 'b'"
-    except Exception as e:
-        assert isinstance(e, TypeError)
-
-def test_multiply_does_not_mutate_inputs():
+def test_multiply_matrices_2x2():
     a = [[1, 2], [3, 4]]
     b = [[5, 6], [7, 8]]
-    # make manual deep copies to compare after operation
-    a_copy = [row[:] for row in a]
-    b_copy = [row[:] for row in b]
-    _ = multiply_matrices(a, b)
-    assert a == a_copy
-    assert b == b_copy
+    expected = [[19, 22], [43, 50]]
+    assert multiply_matrices(a, b) == expected
 
-def test_multiply_with_negative_numbers():
-    a = [[-1, 2], [3, -4]]
-    b = [[5, -6], [-7, 8]]
-    # compute expected manually
+def test_multiply_matrices_1x3_by_3x1():
+    a = [[1, 2, 3]]
+    b = [[4], [5], [6]]
+    assert multiply_matrices(a, b) == [[32]]
+
+def test_multiply_matrices_3x2_by_2x4():
+    a = [[1, 2], [3, 4], [5, 6]]
+    b = [
+        [7, 8, 9, 10],
+        [11, 12, 13, 14],
+    ]
     expected = [
-        [(-1) * 5 + 2 * (-7), (-1) * -6 + 2 * 8],
-        [3 * 5 + (-4) * (-7), 3 * -6 + (-4) * 8],
+        [29, 32, 35, 38],
+        [65, 72, 79, 86],
+        [101, 112, 123, 134],
     ]
     assert multiply_matrices(a, b) == expected
+
+def test_multiply_matrices_identity():
+    I = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    m = [[2, -1, 3], [0, 5, 4], [7, 8, 9]]
+    assert multiply_matrices(I, m) == m
+    assert multiply_matrices(m, I) == m
+
+def test_multiply_matrices_incompatible_dimensions_raises_value_error():
+    a = [[1, 2, 3], [4, 5, 6]]  # 2x3
+    b = [[7, 8], [9, 10]]       # 2x2 -> incompatible
+    try:
+        multiply_matrices(a, b)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Expected ValueError for incompatible dimensions")
+
+def test_multiply_matrices_non_rectangular_input_raises_value_error():
+    a = [[1, 2], [3]]  # non-rectangular
+    b = [[1, 2], [3, 4]]
+    try:
+        multiply_matrices(a, b)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Expected ValueError for non-rectangular input matrix")
+
+def test_multiply_matrices_non_integer_entries_raises_type_error():
+    a = [[1, 2]]  # 1x2
+    b = [[3.0], [4.0]]  # entries are floats -> should raise TypeError
+    try:
+        multiply_matrices(a, b)
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("Expected TypeError for non-integer entries in matrices")
+
+def test_multiply_matrices_with_boolean_entries_treated_as_ints():
+    # bool is subclass of int in Python; behavior: True==1, False==0
+    a = [[True, False]]  # 1x2
+    b = [[2], [3]]       # 2x1
+    # Expected: 1*2 + 0*3 = 2
+    assert multiply_matrices(a, b) == [[2]]

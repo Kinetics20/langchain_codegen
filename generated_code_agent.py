@@ -1,88 +1,92 @@
-from typing import List
+from typing import List, Tuple
 
 
-def _validate_matrix(matrix: List[List[int]], name: str) -> None:
+Matrix = List[List[int]]
+
+
+def _matrix_dimensions(matrix: Matrix) -> Tuple[int, int]:
     """
-    Validate that the given value is a well-formed integer matrix.
-
-    A well-formed matrix is a non-empty list of non-empty lists where each
-    row has the same length and every element is an int.
+    Return the dimensions (rows, cols) of the matrix.
 
     Args:
-        matrix: The matrix to validate.
-        name: A human-readable name for the matrix used in error messages.
-
-    Raises:
-        TypeError: If the structure or element types are invalid.
-        ValueError: If the matrix is empty or rows have inconsistent lengths.
-    """
-    if not isinstance(matrix, list):
-        raise TypeError(f"{name} must be a list of lists of ints.")
-    if len(matrix) == 0:
-        raise ValueError(f"{name} must have at least one row.")
-    row_length = None
-    for i, row in enumerate(matrix):
-        if not isinstance(row, list):
-            raise TypeError(f"{name}[{i}] must be a list.")
-        if len(row) == 0:
-            raise ValueError(f"{name}[{i}] must have at least one column.")
-        if row_length is None:
-            row_length = len(row)
-        elif len(row) != row_length:
-            raise ValueError(
-                f"All rows of {name} must have the same length."
-            )
-        for j, item in enumerate(row):
-            if not isinstance(item, int):
-                raise TypeError(
-                    f"{name}[{i}][{j}] must be an int, got "
-                    f"{type(item).__name__}."
-                )
-
-
-def multiply_matrices(a: List[List[int]],
-                      b: List[List[int]]) -> List[List[int]]:
-    """
-    Multiply two matrices of integers and return the product matrix.
-
-    The function validates that both matrices are well-formed and that the
-    number of columns in the first matrix equals the number of rows in the
-    second matrix.
-
-    Args:
-        a: Left matrix as a list of lists of ints (m x n).
-        b: Right matrix as a list of lists of ints (n x p).
+        matrix: A matrix represented as a list of lists of integers.
 
     Returns:
-        The product matrix as a list of lists of ints (m x p).
+        A tuple (rows, cols).
 
     Raises:
-        TypeError: If inputs are not well-formed integer matrices.
-        ValueError: If the matrices have incompatible dimensions.
+        ValueError: If the matrix is empty or not rectangular.
     """
-    _validate_matrix(a, "a")
-    _validate_matrix(b, "b")
-    a_rows = len(a)
-    a_cols = len(a[0])
-    b_rows = len(b)
-    b_cols = len(b[0])
+    if not matrix:
+        raise ValueError("Matrix must not be empty.")
+    row_count = len(matrix)
+    col_count = len(matrix[0])
+    if col_count == 0:
+        raise ValueError("Matrix rows must contain at least one column.")
+    for row in matrix:
+        if len(row) != col_count:
+            raise ValueError("All rows in the matrix must have the same length.")
+    return row_count, col_count
+
+
+def _validate_matrix_entries(matrix: Matrix) -> None:
+    """
+    Validate that all entries in the matrix are integers.
+
+    Args:
+        matrix: A matrix represented as a list of lists of integers.
+
+    Raises:
+        TypeError: If any entry is not an integer.
+    """
+    for row in matrix:
+        for value in row:
+            if not isinstance(value, int):
+                raise TypeError("Matrix entries must be integers.")
+
+
+def multiply_matrices(a: Matrix, b: Matrix) -> Matrix:
+    """
+    Multiply two matrices and return the resulting matrix.
+
+    Both input matrices must be rectangular (all rows the same length),
+    contain integer entries, and have compatible dimensions for
+    multiplication (columns in 'a' == rows in 'b').
+
+    Args:
+        a: Left-hand matrix as a list of lists of integers.
+        b: Right-hand matrix as a list of lists of integers.
+
+    Returns:
+        The product matrix as a list of lists of integers.
+
+    Raises:
+        ValueError: If matrices are empty, not rectangular, or have
+                    incompatible dimensions.
+        TypeError: If any matrix entry is not an integer.
+    """
+    # Validate shapes and entries
+    a_rows, a_cols = _matrix_dimensions(a)
+    b_rows, b_cols = _matrix_dimensions(b)
+    _validate_matrix_entries(a)
+    _validate_matrix_entries(b)
+
     if a_cols != b_rows:
         raise ValueError(
-            "Incompatible dimensions: a has %d columns but b has %d rows."
-            % (a_cols, b_rows)
+            f"Incompatible dimensions for multiplication: "
+            f"a is {a_rows}x{a_cols}, b is {b_rows}x{b_cols}."
         )
-    # Initialize result matrix with zeros (m x p).
-    result: List[List[int]] = [
-        [0 for _ in range(b_cols)] for _ in range(a_rows)
+
+    # Transpose b to improve cache locality during multiplication.
+    b_t: Matrix = [[b[row][col] for row in range(b_rows)] for col in range(b_cols)]
+
+    # Compute product
+    result: Matrix = [
+        [
+            sum(a[i][k] * b_t[j][k] for k in range(a_cols))
+            for j in range(b_cols)
+        ]
+        for i in range(a_rows)
     ]
-    # Compute multiplication.
-    for i in range(a_rows):
-        row_a = a[i]
-        res_row = result[i]
-        for k in range(a_cols):
-            a_ik = row_a[k]
-            row_b_k = b[k]
-            # Multiply-add across columns of b.
-            for j in range(b_cols):
-                res_row[j] += a_ik * row_b_k[j]
+
     return result
